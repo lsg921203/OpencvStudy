@@ -35,7 +35,7 @@ camera_shot_check =False
 while True:
     if(not camera_shot_check):
         fn = list[i]
-        img = cv2.imread(fn, cv2.IMREAD_REDUCED_COLOR_2)
+        img = cv2.imread(fn, cv2.IMREAD_COLOR)#IMREAD_REDUCED_COLOR_2
         cv2.imshow("image", img)
 
         cmd = cv2.waitKey(0)
