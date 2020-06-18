@@ -7,8 +7,6 @@ import cv2
 import os
 import threading
 import time
-
-
 def file_check(list, file_name):
     for f in list:
         if f == file_name:
@@ -28,6 +26,85 @@ def make_image_file_list():
         else:
             del list[i]
     return list
+class FaceDetect():
+    def __init__(self):
+        self.cascade_file = "C:\\Users\\Playdata\\Desktop\\sung\\python_sung\\opencvofficial\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml"
+        self.cascade = cv2.CascadeClassifier(self.cascade_file)
+
+    def face_detect_rec(self,image,image_gs):
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
+
+        if len(face_list) > 0:
+
+            print(face_list)
+            color = (0, 0, 255)
+            for face in face_list:
+                x, y, w, h = face
+                cv2.rectangle(image, (x, y), (x + w, y + h), color, thickness=8)
+
+            cv2.imwrite("res.png", image)
+        else:
+            print("no face")
+        return image
+
+    def face_detect_crown(self,image,image_gs):
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
+
+        if len(face_list) > 0:
+
+
+            color = (0, 0, 255)
+            for face in face_list:
+                x, y, w, h = face
+
+                print("start:",x,y)
+                print("end:",x + w, y + h)
+                #cv2.rectangle(image, (x+w//2 - 5, y-5),  (x+w//2 + 5, y+5), color, thickness=8)  # 이걸 크라운으로
+                self.draw_crown(y-10,x+w//3,image)
+
+
+            cv2.imwrite("res.png", image)
+        else:
+            print("no face")
+        return image
+
+    def draw_crown(self,center_x,center_y,image):
+
+        print("crown center:",center_x, center_y)
+        img1 = cv2.imread("crown.jpg")
+        rows, cols, channels = img1.shape
+        rows2, cols2, channels2 = image.shape
+        if (center_x-70 <0 ):
+            center_x = 70
+        elif (center_x-70+rows>=rows2):
+            center_x = rows2 - 1 - rows + 70
+
+        if (center_y - 40 < 0):
+            center_y = 40
+        elif (center_y-40+cols >= cols2):
+            center_y = cols2 - 1 - cols + 40
+
+        roi = image[center_x-70:center_x-70+rows, center_y-40:center_y-40+cols]
+
+        img2gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        ret, mask = cv2.threshold(img2gray, 120, 255, cv2.THRESH_BINARY)
+        mask_inv = cv2.bitwise_not(mask)
+
+        img1_fg = cv2.bitwise_and(img1, img1, mask=mask)
+        img2_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+
+        dst = cv2.add(img1_fg, img2_bg)
+
+        image[center_x-70:center_x-70+rows, center_y-40:center_y-40+cols] = dst
+    def draw_caffebene(self,image):
+        img1 = cv2.imread("endinglogo.jpg")
+        cols, rows, channels = img1.shape
+        cols2, rows2, channels2 = image.shape
+        print(rows,cols)
+        print(rows2, cols2)
+        roi = image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ]
+        print(cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
+        image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ] = img1
 
 class Application(tk.Frame):
 
@@ -45,6 +122,7 @@ class Application(tk.Frame):
         self.image_name = "photo"
         self.start_preview()
         self.isBlack = False
+        self.f = FaceDetect()
 
     def create_widgets(self):# 여기에서 위젯 변경
 
@@ -88,6 +166,8 @@ class Application(tk.Frame):
             ret, frame = self.capture.read()
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
+            frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
 
             image = Image.fromarray(frame)
             self.img_tk = ImageTk.PhotoImage(image=image)
@@ -95,6 +175,11 @@ class Application(tk.Frame):
             self.label.place(x=10, y=10)
         if self.isBlack == True:
             ret, frame = self.capture.read()
+            frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.draw_caffebene(frame)
+
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             image = Image.fromarray(frame)
@@ -113,11 +198,6 @@ class Application(tk.Frame):
             self.save_image(frame=frame)
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
-            frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            f = FaceDetect()
-
-            f.face_detect_crown(image=image, image_gs=image_gs)
             # cv2.imshow("frame",frame)
 
             image = Image.fromarray(frame)
@@ -154,8 +234,13 @@ class Application(tk.Frame):
 
             print(ret)
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.draw_caffebene(frame)
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             # cv2.imshow("frame",frame)
 
             image = Image.fromarray(frame)
@@ -174,7 +259,6 @@ class Application(tk.Frame):
                 self.current_filenum = 0
             fn = self.image_file_list[self.current_filenum]
             frame = cv2.imread(fn, cv2.IMREAD_COLOR)  # IMREAD_REDUCED_COLOR_2
-
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
             image = Image.fromarray(frame)

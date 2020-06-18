@@ -38,7 +38,7 @@ class FaceDetect():
                 print("end:",x + w, y + h)
                 #cv2.rectangle(image, (x+w//2 - 5, y-5),  (x+w//2 + 5, y+5), color, thickness=8)  # 이걸 크라운으로
                 self.draw_crown(y-10,x+w//3,image)
-
+                self.draw_caffebene(image)
 
             cv2.imwrite("res.png", image)
         else:
@@ -74,9 +74,17 @@ class FaceDetect():
 
         image[center_x-70:center_x-70+rows, center_y-40:center_y-40+cols] = dst
 
+    def draw_caffebene(self,image):
+        img1 = cv2.imread("endinglogo.jpg")
+        cols, rows, channels = img1.shape
+        cols2, rows2, channels2 = image.shape
+        print(rows,cols)
+        print(rows2, cols2)
+        roi = image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ]
+        print(cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
+        image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ] = img1
 
-
-image_file = "photo2.jpg"
+image_file = "photo9.jpg"
 
 image = cv2.imread(image_file)
 
