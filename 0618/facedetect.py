@@ -34,11 +34,11 @@ class FaceDetect():
             for face in face_list:
                 x, y, w, h = face
 
-                print("start:",x,y)
-                print("end:",x + w, y + h)
+                #print("start:",x,y)
+                #print("end:",x + w, y + h)
                 #cv2.rectangle(image, (x+w//2 - 5, y-5),  (x+w//2 + 5, y+5), color, thickness=8)  # 이걸 크라운으로
                 self.draw_crown(y-10,x+w//3,image)
-                self.draw_caffebene(image)
+
 
             cv2.imwrite("res.png", image)
         else:
@@ -47,8 +47,11 @@ class FaceDetect():
 
     def draw_crown(self,center_x,center_y,image):
 
-        print("crown center:",center_x, center_y)
+        #print("crown center:",center_x, center_y)
         img1 = cv2.imread("crown.jpg")
+        b, g, r = cv2.split(img1)
+        img1 = cv2.merge([r, g, b])
+
         rows, cols, channels = img1.shape
         rows2, cols2, channels2 = image.shape
         if (center_x-70 <0 ):
@@ -76,15 +79,23 @@ class FaceDetect():
 
     def draw_caffebene(self,image):
         img1 = cv2.imread("endinglogo.jpg")
+        b, g, r = cv2.split(img1)
+        img1 = cv2.merge([r, g, b])
         cols, rows, channels = img1.shape
         cols2, rows2, channels2 = image.shape
-        print(rows,cols)
-        print(rows2, cols2)
+        #print(rows,cols)
+        #print(rows2, cols2)
         roi = image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ]
-        print(cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
+        (cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
         image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ] = img1
 
-image_file = "photo9.jpg"
+    def face_detect_list(self,image):
+        image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
+
+        return face_list
+
+image_file = ""#"photo9.jpg"
 
 image = cv2.imread(image_file)
 

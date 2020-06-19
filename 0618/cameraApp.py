@@ -57,8 +57,8 @@ class FaceDetect():
             for face in face_list:
                 x, y, w, h = face
 
-                print("start:",x,y)
-                print("end:",x + w, y + h)
+                #print("start:",x,y)
+                #print("end:",x + w, y + h)
                 #cv2.rectangle(image, (x+w//2 - 5, y-5),  (x+w//2 + 5, y+5), color, thickness=8)  # 이걸 크라운으로
                 self.draw_crown(y-10,x+w//3,image)
 
@@ -70,8 +70,11 @@ class FaceDetect():
 
     def draw_crown(self,center_x,center_y,image):
 
-        print("crown center:",center_x, center_y)
+        #print("crown center:",center_x, center_y)
         img1 = cv2.imread("crown.jpg")
+        b, g, r = cv2.split(img1)
+        img1 = cv2.merge([r, g, b])
+
         rows, cols, channels = img1.shape
         rows2, cols2, channels2 = image.shape
         if (center_x-70 <0 ):
@@ -98,14 +101,20 @@ class FaceDetect():
         image[center_x-70:center_x-70+rows, center_y-40:center_y-40+cols] = dst
     def draw_caffebene(self,image):
         img1 = cv2.imread("endinglogo.jpg")
+        b, g, r = cv2.split(img1)
+        img1 = cv2.merge([r, g, b])
         cols, rows, channels = img1.shape
         cols2, rows2, channels2 = image.shape
-        print(rows,cols)
-        print(rows2, cols2)
+        #print(rows,cols)
+        #print(rows2, cols2)
         roi = image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ]
-        print(cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
+        (cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
         image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ] = img1
+    def face_detect_list(self,image):
+        image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
 
+        return face_list
 class Application(tk.Frame):
 
 
@@ -178,9 +187,11 @@ class Application(tk.Frame):
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             self.f.face_detect_crown(image=frame, image_gs=frame_gs)
-            self.f.draw_caffebene(frame)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame = cv2.merge([frame,frame,frame])
+
+            self.f.draw_caffebene(frame)
 
             image = Image.fromarray(frame)
             self.img_tk = ImageTk.PhotoImage(image=image)
@@ -196,16 +207,30 @@ class Application(tk.Frame):
 
             print(ret)
             self.save_image(frame=frame)
+
+            frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
-            # cv2.imshow("frame",frame)
+
+
+
+
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.draw_caffebene(frame)
+
+            #cv2.imshow("frame",frame)
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             image = Image.fromarray(frame)
             self.img_tk = ImageTk.PhotoImage(image=image)
             self.label = tk.Label(master=self.master, image=self.img_tk)
             self.label.place(x=10, y=10)
 
+            r, g, b = cv2.split(frame)
+            frame = cv2.merge([b, g, r])
 
+            self.save_image(frame=frame)
 
             self.current_filenum = len(self.image_file_list) - 1
             self.isBlack = False
@@ -238,13 +263,18 @@ class Application(tk.Frame):
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             self.f.face_detect_crown(image=frame, image_gs=frame_gs)
-            self.f.draw_caffebene(frame)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame = cv2.merge([frame, frame, frame])
+
+            self.f.draw_caffebene(frame)
             # cv2.imshow("frame",frame)
 
+            r, g, b = cv2.split(frame)
+            frame = cv2.merge([b, g, r])
+
             image = Image.fromarray(frame)
-            print(type(image))
+
             self.img_tk = ImageTk.PhotoImage(image=image)
             self.label = tk.Label(master=self.master, image=self.img_tk)
             self.label.place(x=10, y=10)
@@ -266,7 +296,6 @@ class Application(tk.Frame):
             self.img_tk = ImageTk.PhotoImage(image=image)
             self.label = tk.Label(master=self.master, image=self.img_tk)
             self.label.place(x=10, y=10)
-            print("before photo")
             print("next photo")
     def Button_command3(self):
         if(not self.check_current_state):
