@@ -7,6 +7,7 @@ import cv2
 import os
 import threading
 import time
+import numpy as np
 def file_check(list, file_name):
     for f in list:
         if f == file_name:
@@ -35,6 +36,10 @@ class FaceDetect():
     def __init__(self):
         self.cascade_file = "C:\\Users\\Playdata\\Desktop\\sung\\python_sung\\opencvofficial\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml"
         self.cascade = cv2.CascadeClassifier(self.cascade_file)
+        self.cap = cv2.VideoCapture("videos/mimvideo.mp4")
+
+        self.cap.set(3, 320)
+        self.cap.set(4, 240)
 
     def face_detect_rec(self,image,image_gs):
         face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
@@ -119,7 +124,7 @@ class FaceDetect():
 
     def draw_mim(self,center_x,center_y,image):
         # print("crown center:",center_x, center_y)
-        img1 = cv2.imread("mim.png")
+        img1 = cv2.imread("mim2.png")
         b, g, r = cv2.split(img1)
         img1 = cv2.merge([r, g, b])
 
@@ -149,6 +154,62 @@ class FaceDetect():
 
 
         image[center_x - 70:center_x - 70 + rows, center_y - 40:center_y - 40 + cols] = dst
+
+    def draw_mim_video(self,center_x,center_y,image):
+        # print("crown center:",center_x, center_y)
+        ret, frame = self.cap.read()
+        #print(ret)
+        if not ret:
+            self.cap = cv2.VideoCapture("videos/mimvideo.mp4")
+            ret, frame = self.cap.read()
+
+        if ret:
+            #cv2.imshow("frame",frame)
+            frame = cv2.resize(frame, dsize=(140, 80), interpolation=cv2.INTER_AREA)
+            # image = cv2.cvtColor(frame,cv2.COLOR)
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+            lower_orange = np.array([55, 150, 100])  # [11, 170, 50]
+            upper_orange = np.array([170, 255, 255])  # [33, 255, 255]
+
+            mask = cv2.inRange(hsv, lower_orange, upper_orange)
+            mask_inv = cv2.bitwise_not(mask)
+            # bit연산자를 통해서 blue영역만 남김.
+            #res = cv2.bitwise_and(frame, frame, mask=mask_inv)
+
+            #cv2.imshow('frame', frame)
+            #cv2.imshow('mask', mask)
+            #cv2.imshow('res', res)
+
+
+            b, g, r = cv2.split(frame)
+            img1 = cv2.merge([r, g, b])
+
+            rows, cols, channels = img1.shape
+            rows2, cols2, channels2 = image.shape
+            if (center_x - 70 < 0):
+                center_x = 70
+            elif (center_x - 70 + rows >= rows2):
+                center_x = rows2 - 1 - rows + 70
+
+            if (center_y - 40 < 0):
+                center_y = 40
+            elif (center_y - 40 + cols >= cols2):
+                center_y = cols2 - 1 - cols + 40
+
+            roi = image[center_x - 70:center_x - 70 + rows, center_y - 40:center_y - 40 + cols]
+
+
+            img1_fg = cv2.bitwise_and(img1, img1, mask=mask_inv)
+            img2_bg = cv2.bitwise_and(roi, roi, mask=mask)
+
+            img1_fg = cv2.add(img1_fg, img2_bg)
+            dst = cv2.addWeighted(img1_fg, float(100 - 0) * 0.01, roi, float(0) * 0.01, 0)
+
+
+            image[center_x - 70:center_x - 70 + rows, center_y - 40:center_y - 40 + cols] = dst
+
+
     def face_detect_mim(self,image,image_gs):
         face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
 
@@ -166,6 +227,22 @@ class FaceDetect():
             # print("no face")
         return image
 
+    def face_detect_mim_video(self, image, image_gs):
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
+
+        if len(face_list) > 0:
+
+            color = (0, 0, 255)
+            for face in face_list:
+                x, y, w, h = face
+                # print(x, y, w, h)
+                self.draw_mim_video(y + 20, x - 20, image)
+
+            cv2.imwrite("res.png", image)
+        else:
+            pass
+            # print("no face")
+        return image
     def face_detect_list(self,image):
         image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
@@ -211,6 +288,7 @@ class Application(tk.Frame):
 
         #self.up_web = tk.Button(self, width=10, font=60, text='web upload')
         #self.up_web.pack()
+
     def save_image(self,frame):
         while True:
             file_name = self.image_name + str(self.image_num) + ".jpg"
@@ -224,15 +302,16 @@ class Application(tk.Frame):
         self.image_file_list.append(file_name)
 
     def start_preview(self):
-        self.th = threading.Thread(target=self.th_preview)
+        self.th = threading.Thread(target=self.th_preview, args=(lambda: self.check_current_state ,))
         self.th.start()
-    def th_preview(self):
-        while not self.check_current_state:#촬영모드 일때만
+
+    def th_preview(self,ld_ccs):
+        while not ld_ccs():#촬영모드 일때만
             ret, frame = self.capture.read()
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
+            self.f.face_detect_mim_video(image=frame, image_gs=frame_gs)
 
             image = Image.fromarray(frame)
             self.img_tk = ImageTk.PhotoImage(image=image)
@@ -374,8 +453,8 @@ class Application(tk.Frame):
 
 
     def Exit(self):# 이건 지우지 말기
-
-
+        self.f.cap.release()
+        self.check_current_state = True
         self.master.destroy()
 
 
