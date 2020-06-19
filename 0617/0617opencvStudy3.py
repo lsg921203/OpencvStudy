@@ -1,7 +1,7 @@
 import cv2
 from matplotlib import pyplot as plt
 
-img = cv2.imread("ironman2.jpg",cv2.IMREAD_COLOR)
+img = cv2.imread("images/ironman2.jpg", cv2.IMREAD_COLOR)
 
 ######
 b, g, r = cv2.split(img)

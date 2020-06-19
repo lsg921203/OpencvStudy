@@ -1,8 +1,8 @@
 import cv2
 
 
-img1 = cv2.imread("nothing.png")
-img2 = cv2.imread('wind-turbine.jpg')
+img1 = cv2.imread("images/nothing.png")
+img2 = cv2.imread('images/wind-turbine.jpg')
 
 h,w,c = img1.shape
 h2, w2 , c2 = img2.shape

@@ -19,6 +19,9 @@ def make_video_file_list():
         if (i >= len(list)):
             break
         strs = list[i].split(".")
+        if len(strs)<2:
+            del list[i]
+            continue
         if (strs[1] == "avi" or strs[1] == "mp4" ):
             i += 1
         else:
@@ -161,7 +164,8 @@ class Application(tk.Frame):
 
     def th_capture_manager(self,ld_cc):
         while ld_cc():
-            self.capture_1min()
+            #self.capture_1min()
+            self.capture_1min_face_detect()
             time.sleep(1)
 
     def capture_1min(self):
@@ -203,27 +207,33 @@ class Application(tk.Frame):
         now = time.localtime()
         now = "%04d-%02d-%02d %02d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
 
-        videoName = now + ".avi"
-        print(videoName)
-        self.out = cv2.VideoWriter(videoName, self.fourcc, 25.0, (640, 480))
+        #videoName = now + ".avi"
+        #print(videoName)
+        #self.out = cv2.VideoWriter(videoName, self.fourcc, 25.0, (640, 480))
 
         face_check = False
         frame_list = []
         face_list = []
+        f = FaceDetect()
+
         start = time.time()
         end = time.time()
         x=50
         y=100
         t=1
-        while (end-start)<60.0:
+        while (end-start)<10.0:
             if (self.capture_check == False):
                 break
             ret, frame = self.cap.read()
             if ret:
                 frame_list.append(frame)
+                face_list = f.face_detect_list(frame)
+                if len(face_list)>0:
+                    face_check = True
+                    print("face")
 
 
-                self.out.write(frame)
+                #self.out.write(frame)
                 cv2.imshow("save",frame)
                 cv2.moveWindow("save",x,y)
                 cv2.waitKey(1)
@@ -235,6 +245,18 @@ class Application(tk.Frame):
             elif(x<50):
                 t=1
             end = time.time()
+        videoName = ""
+        if face_check:
+            videoName = "facedetected/"+now + ".avi"
+
+        else:
+            videoName = "notdetected/"+now + ".avi"
+
+        print(videoName)
+        self.out = cv2.VideoWriter(videoName, self.fourcc, 25.0, (640, 480))
+        for fr in frame_list:
+            self.out.write(frame)
+
         self.videoList.append(videoName)
         self.listbox.insert(len(self.videoList),videoName)
         self.out.release()

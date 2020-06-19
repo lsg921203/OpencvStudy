@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-img1 = cv2.imread('sparrow.jpg')
-img2 = cv2.imread('sky.jpg')
+img1 = cv2.imread('images/sparrow.jpg')
+img2 = cv2.imread('images/sky.jpg')
 
 img1 = img1[0:426,0:640]
 def nothing(x):

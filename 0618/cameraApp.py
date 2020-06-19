@@ -14,17 +14,22 @@ def file_check(list, file_name):
     return True
 
 def make_image_file_list():
-    list = os.listdir()
+    list = os.listdir("photos")
     i = 0
 
     while True:
         if (i >= len(list)):
             break
         strs = list[i].split(".")
+        if len(strs)<2:
+            del list[i]
+            continue
         if (strs[1] == "jpg" or strs[1] == ".png" or strs[1] == ".gif"):
+            list[i] = "photos/"+list[i]
             i += 1
         else:
             del list[i]
+    print(list)
     return list
 class FaceDetect():
     def __init__(self):
@@ -65,7 +70,8 @@ class FaceDetect():
 
             cv2.imwrite("res.png", image)
         else:
-            print("no face")
+            pass
+            #print("no face")
         return image
 
     def draw_crown(self,center_x,center_y,image):
@@ -110,6 +116,56 @@ class FaceDetect():
         roi = image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ]
         (cols2 -10 -cols , cols2 -10 , rows2//2 - rows//2 ,  rows2//2 + rows//2 )
         image[cols2 -10 -cols : cols2 -10 , rows2//2 - rows//2 :  rows2//2 + rows//2 ] = img1
+
+    def draw_mim(self,center_x,center_y,image):
+        # print("crown center:",center_x, center_y)
+        img1 = cv2.imread("mim.png")
+        b, g, r = cv2.split(img1)
+        img1 = cv2.merge([r, g, b])
+
+        rows, cols, channels = img1.shape
+        rows2, cols2, channels2 = image.shape
+        if (center_x - 70 < 0):
+            center_x = 70
+        elif (center_x - 70 + rows >= rows2):
+            center_x = rows2 - 1 - rows + 70
+
+        if (center_y - 40 < 0):
+            center_y = 40
+        elif (center_y - 40 + cols >= cols2):
+            center_y = cols2 - 1 - cols + 40
+
+        roi = image[center_x - 70:center_x - 70 + rows, center_y - 40:center_y - 40 + cols]
+
+        img2gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        ret, mask = cv2.threshold(img2gray, 1, 255, cv2.THRESH_BINARY)
+        mask_inv = cv2.bitwise_not(mask)
+
+        img1_fg = cv2.bitwise_and(img1, img1, mask=mask)
+        img2_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+
+        img1_fg = cv2.add(img1_fg, img2_bg)
+        dst = cv2.addWeighted(img1_fg, float(100 - 30) * 0.01, roi, float(30) * 0.01, 0)
+
+
+        image[center_x - 70:center_x - 70 + rows, center_y - 40:center_y - 40 + cols] = dst
+    def face_detect_mim(self,image,image_gs):
+        face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
+
+        if len(face_list) > 0:
+
+            color = (0, 0, 255)
+            for face in face_list:
+                x, y, w, h = face
+                #print(x, y, w, h)
+                self.draw_mim(y+ h//4, x + w // 4, image)
+
+            cv2.imwrite("res.png", image)
+        else:
+            pass
+            # print("no face")
+        return image
+
     def face_detect_list(self,image):
         image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         face_list = self.cascade.detectMultiScale(image_gs, scaleFactor=1.1, minNeighbors=1, minSize=(150, 150))
@@ -128,7 +184,7 @@ class Application(tk.Frame):
         self.image_file_list = make_image_file_list()
         self.current_filenum = 0
         self.image_num = 0
-        self.image_name = "photo"
+        self.image_name = "photos/photo"
         self.start_preview()
         self.isBlack = False
         self.f = FaceDetect()
@@ -176,7 +232,7 @@ class Application(tk.Frame):
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
 
             image = Image.fromarray(frame)
             self.img_tk = ImageTk.PhotoImage(image=image)
@@ -186,7 +242,7 @@ class Application(tk.Frame):
             ret, frame = self.capture.read()
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.merge([frame,frame,frame])
@@ -216,7 +272,7 @@ class Application(tk.Frame):
 
 
 
-            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
             self.f.draw_caffebene(frame)
 
             #cv2.imshow("frame",frame)
@@ -239,6 +295,7 @@ class Application(tk.Frame):
             if( self.current_filenum<0):
                 self.current_filenum = len(self.image_file_list) - 1
             fn = self.image_file_list[self.current_filenum]
+            print(fn)
             frame = cv2.imread(fn, cv2.IMREAD_COLOR)  # IMREAD_REDUCED_COLOR_2
 
             b, g, r = cv2.split(frame)
@@ -262,7 +319,7 @@ class Application(tk.Frame):
             #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
+            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.merge([frame, frame, frame])
@@ -288,6 +345,7 @@ class Application(tk.Frame):
             if(self.current_filenum>=len(self.image_file_list)):
                 self.current_filenum = 0
             fn = self.image_file_list[self.current_filenum]
+            print(fn)
             frame = cv2.imread(fn, cv2.IMREAD_COLOR)  # IMREAD_REDUCED_COLOR_2
             b, g, r = cv2.split(frame)
             frame = cv2.merge([r, g, b])
