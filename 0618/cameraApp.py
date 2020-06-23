@@ -321,7 +321,7 @@ class Application(tk.Frame):
             ret, frame = self.capture.read()
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.merge([frame,frame,frame])
@@ -341,7 +341,7 @@ class Application(tk.Frame):
             ret, frame = self.capture.read()
 
             print(ret)
-            self.save_image(frame=frame)
+            #self.save_image(frame=frame)
 
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -398,7 +398,7 @@ class Application(tk.Frame):
             #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            self.f.face_detect_mim(image=frame, image_gs=frame_gs)
+            self.f.face_detect_crown(image=frame, image_gs=frame_gs)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.merge([frame, frame, frame])
