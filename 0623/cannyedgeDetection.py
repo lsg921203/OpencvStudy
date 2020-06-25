@@ -20,3 +20,4 @@ for i in range(5):
     plt.xticks([])
     plt.yticks([])
 plt.show()
+

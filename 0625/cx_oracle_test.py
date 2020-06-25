@@ -18,12 +18,12 @@ class Test:
 
 
 class Dao_test:
-
+    #전체검색
     def select_all(self):
-
+        #커넥션 수립. ID,PW, ip:리스너/sid(작업관리자 -> 서비스 -> oracleservice뒤에있는거 )
         conn = cx_Oracle.connect("hr", "hr", "localhost:1521/xe", encoding='utf-8')
 
-        cursor = conn.cursor()
+        cursor = conn.cursor()#spl문 실행하고 select인 경우 검색결과 반환
 
         sql = 'select * from test'
 
@@ -34,7 +34,7 @@ class Dao_test:
         for row in cursor:
             datas.append(Test(row[0], row[1], row[2], row[3]))
 
-        conn.close()
+        conn.close()#커넥션 끊는다
 
         return datas
 
@@ -46,13 +46,13 @@ class Dao_test:
 
         sql = 'select * from test where num=:1'
 
-        d = (num,)
+        d = (num,)#튜플로 sql 바인딩할 값 지정
 
-        cursor.execute(sql, d)
+        cursor.execute(sql, d)#sql실행. 바인딩 튜플을 2번째 값으로
 
         row = cursor.fetchone()
 
-        conn.close()
+        conn.close()#연결끊기
 
         if row is not None:
             return Test(row[0], row[1], row[2], row[3])
@@ -69,7 +69,7 @@ class Dao_test:
 
         cursor.execute(sql, d)
 
-        conn.commit()
+        conn.commit()#자바와 달리 자동 커밋이 안되므로 쓰기동작 후 커밋 필수
 
         conn.close()
 
@@ -93,9 +93,9 @@ class Dao_test:
 def main():
     dao = Dao_test()
 
-    dao.insert(Test(0, 'aaa', 1400, 'info1'))
+    #dao.insert(Test(0, 'aaa', 1400, 'info1'))
 
-    #dao.update(Test(11, '', 2500, '가나다'))
+    dao.update(Test(2, '', 2500, '가나다'))
 
     datas = dao.select_all()
 
